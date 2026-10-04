@@ -106,7 +106,7 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
 ### Utility icons
 
 - Enable **Show while in compact view**, then choose which controls to keep with
-  the detached minimap using the individual **Keep … with minimap** settings:
+  the detached minimap using the individual **Show …** settings:
   XP, world map, wiki, activity log and store.
 - These settings are disabled by default. Selected controls follow the detached
   minimap; unselected controls retain their compact-layout positions. HP, prayer,
@@ -116,7 +116,7 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
 - Detached controls run client-side operation callbacks only. Actions requiring
   server packets are unavailable. The detached Wiki control supports Search and
   DPS when the Wiki plugin is enabled; Lookup remains available in the compact
-  layout when **Keep wiki with minimap** is disabled.
+  layout when **Show Wiki** is disabled.
 - Existing visibility settings still apply. Disabling the detached minimap restores
   the usual compact layout. Edit mode hides the detached minimap and restores
   the normal controls so their visibility can still be edited.
