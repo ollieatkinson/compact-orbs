@@ -329,6 +329,71 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.KEEP_XP_WITH_MINIMAP,
+		name = "Keep XP with minimap",
+		description = "Keep the XP control with the detached minimap instead of the compact orbs. " +
+			"Requires Show while in compact view.",
+		section = minimapOverlay,
+		position = 3
+	)
+	default boolean keepXpWithMinimap()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.KEEP_WORLD_MAP_WITH_MINIMAP,
+		name = "Keep world map with minimap",
+		description = "Keep the world map control with the detached minimap instead of the compact orbs. " +
+			"Requires Show while in compact view.",
+		section = minimapOverlay,
+		position = 4
+	)
+	default boolean keepWorldMapWithMinimap()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.KEEP_WIKI_WITH_MINIMAP,
+		name = "Keep wiki with minimap",
+		description = "Keep Wiki Search and DPS with the detached minimap. Lookup is unavailable here. " +
+			"Requires Show while in compact view.",
+		section = minimapOverlay,
+		position = 5
+	)
+	default boolean keepWikiWithMinimap()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.KEEP_ACTIVITY_WITH_MINIMAP,
+		name = "Keep activity log with minimap",
+		description = "Keep the activity log control with the detached minimap instead of the compact orbs. " +
+			"Requires Show while in compact view.",
+		section = minimapOverlay,
+		position = 6
+	)
+	default boolean keepActivityWithMinimap()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.KEEP_STORE_WITH_MINIMAP,
+		name = "Keep store with minimap",
+		description = "Keep the store control with the detached minimap instead of the compact orbs. " +
+			"Requires Show while in compact view.",
+		section = minimapOverlay,
+		position = 7
+	)
+	default boolean keepStoreWithMinimap()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Orb Visibility / Swapping",
 		description = "",

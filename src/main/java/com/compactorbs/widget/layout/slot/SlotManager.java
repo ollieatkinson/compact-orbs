@@ -236,6 +236,11 @@ public class SlotManager
 			return false;
 		}
 
+		if (manager.keepOrbWithMinimap(target))
+		{
+			return true;
+		}
+
 		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled())
 		{
 			return config.hideActivity() && manager.allowReordering();

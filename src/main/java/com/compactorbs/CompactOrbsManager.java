@@ -55,6 +55,7 @@ import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
+import com.compactorbs.widget.overlay.DetachedMinimapOrbs;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -121,6 +122,9 @@ public class CompactOrbsManager
 	@Inject
 	private BindingManager bindingManager;
 
+	@Inject
+	private DetachedMinimapOrbs detachedMinimapOrbs;
+
 	public boolean wikiPluginBannerExists;
 
 	public boolean snapCornerRepositioned;
@@ -165,6 +169,7 @@ public class CompactOrbsManager
 	//rebuild the layout from state/config
 	public void rebuildLayout()
 	{
+		detachedMinimapOrbs.clear();
 		updateCustomChildren();
 
 		if (isFixedMode())
@@ -534,6 +539,45 @@ public class CompactOrbsManager
 		updateCompassFrameChild();
 		updateMinimapToggleButton();
 		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+		updateMinimapOverlaySize();
+	}
+
+	private void updateMinimapOverlaySize()
+	{
+		Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
+		if (parent == null || overlayMinimap == null)
+		{
+			return;
+		}
+		boolean withOrbs = hasUtilityOrbsWithMinimap();
+		int width = withOrbs ? Layout.Original.MAP_CONTAINER_WIDTH : Layout.MinimapOverlay.CONTAINER_WIDTH;
+		int height = withOrbs ? Layout.MinimapOverlay.UTILITY_CONTAINER_HEIGHT : Layout.MinimapOverlay.CONTAINER_HEIGHT;
+		boolean changed = widgetManager.updateValue(parent::getOriginalWidth, parent::setOriginalWidth, width);
+		changed |= widgetManager.updateValue(parent::getOriginalHeight, parent::setOriginalHeight, height);
+		if (changed)
+		{
+			parent.revalidate();
+			// Right-aligned frame, map and hit regions depend on the new width.
+			Widget[] children = parent.getChildren();
+			if (children != null)
+			{
+				for (Widget child : children)
+				{
+					if (child != null)
+					{
+						child.revalidate();
+					}
+				}
+			}
+		}
+		int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - width);
+		for (Widget compass : new Widget[] {overlayCompass, overlayCompassLayer})
+		{
+			if (compass != null && widgetManager.updateValue(compass::getOriginalX, compass::setOriginalX, compassX))
+			{
+				compass.revalidate();
+			}
+		}
 	}
 
 	private void updateCompassFrameChild()
@@ -583,6 +627,7 @@ public class CompactOrbsManager
 	//clear any created children and reset previous parent id
 	void clearCustomChildren()
 	{
+		detachedMinimapOrbs.clear();
 		widgetManager.clearChild(minimapButton);
 		widgetManager.clearChild(compassFrame);
 		widgetManager.clearChild(overlayLogoutXIcon);
@@ -667,6 +712,7 @@ public class CompactOrbsManager
 		overlayMinimapFrame = widgetManager.createOverlayMinimapFrame(parent);
 		overlayLogoutXStone = widgetManager.createOverlayLogoutXStone(parent, hideOverlayLogoutX());
 		overlayLogoutXIcon = widgetManager.createOverlayLogoutXIcon(parent, hideOverlayLogoutX());
+		updateMinimapOverlaySize();
 	}
 
 	public void setupMinimapOverlay()
@@ -910,12 +956,49 @@ public class CompactOrbsManager
 
 	boolean hideMinimapOverlay()
 	{
-		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
+		return isEditingLayout || !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
 	}
 
 	public boolean isMinimapOverlayEnabled()
 	{
 		return config.showMinimapInCompactView();
+	}
+
+	private boolean canAttachToMinimap()
+	{
+		return isCompactLayout() && isMinimapOverlayEnabled() && !isEditingLayout;
+	}
+
+	public boolean hasUtilityOrbsWithMinimap()
+	{
+		return canAttachToMinimap() && (config.keepXpWithMinimap() || config.keepWorldMapWithMinimap()
+			|| config.keepWikiWithMinimap() || config.keepActivityWithMinimap() || config.keepStoreWithMinimap());
+	}
+
+	public boolean keepOrbWithMinimap(TargetWidget target)
+	{
+		if (!canAttachToMinimap() || !(target instanceof Orbs))
+		{
+			return false;
+		}
+		switch ((Orbs) target)
+		{
+			case XP_DROPS_CONTAINER:
+				return config.keepXpWithMinimap();
+			case WORLD_MAP_CONTAINER:
+				return config.keepWorldMapWithMinimap();
+			case STORE_ORB_CONTAINER:
+				return config.keepStoreWithMinimap();
+			case ACTIVITY_ORB_CONTAINER:
+				return config.keepActivityWithMinimap();
+			case WIKI_ICON_CONTAINER:
+			case WIKI_PLUGIN_ICON:
+			case WIKI_VANILLA_CONTAINER:
+			case WIKI_VANILLA_ICON:
+				return config.keepWikiWithMinimap();
+			default:
+				return false;
+		}
 	}
 
 	//prevent unintended state changes for the logout-x since it is treated as a side icon/stone, i.e. don't unhide when it should be hidden

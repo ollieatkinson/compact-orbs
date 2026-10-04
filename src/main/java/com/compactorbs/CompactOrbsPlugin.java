@@ -45,6 +45,7 @@ import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.layout.slot.SlotRegistry;
+import com.compactorbs.widget.overlay.DetachedMinimapOrbs;
 import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
@@ -53,6 +54,7 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuEntryAdded;
@@ -104,6 +106,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 	@Inject
 	private MinimapOverlay minimapOverlay;
+
+	@Inject
+	private DetachedMinimapOrbs detachedMinimapOrbs;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -181,6 +186,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	CompactOrbsConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(CompactOrbsConfig.class);
+	}
+
+	@Subscribe
+	public void onBeforeRender(BeforeRender event)
+	{
+		detachedMinimapOrbs.update();
 	}
 
 	@Subscribe
@@ -518,8 +529,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
+			case ConfigKeys.KEEP_XP_WITH_MINIMAP:
+			case ConfigKeys.KEEP_WORLD_MAP_WITH_MINIMAP:
+			case ConfigKeys.KEEP_WIKI_WITH_MINIMAP:
+			case ConfigKeys.KEEP_ACTIVITY_WITH_MINIMAP:
+			case ConfigKeys.KEEP_STORE_WITH_MINIMAP:
 				clientThread.invokeLater(() ->
 				{
+					manager.rebuildLayout();
 					widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, manager.hideMinimapOverlay());
 					manager.hideLogout();
 					manager.updateLogoutXPosition();

@@ -102,7 +102,25 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
     - the `logout-x` will open the logout tab or world switcher
   
   ![](https://imgur.com/MpxTcDI.gif)
-  
+
+### Utility icons
+
+- Enable **Show while in compact view**, then choose which controls to keep with
+  the detached minimap using the individual **Keep … with minimap** settings:
+  XP, world map, wiki, activity log and store.
+- These settings are disabled by default. Selected controls follow the detached
+  minimap; unselected controls retain their compact-layout positions. HP, prayer,
+  run and special attack remain in the compact layout.
+- The minimap's compass and the independent **Show Logout-X** setting retain their
+  existing behavior. Logout-X is available in modern resizable mode only.
+- Detached controls run client-side operation callbacks only. Actions requiring
+  server packets are unavailable. The detached Wiki control supports Search and
+  DPS when the Wiki plugin is enabled; Lookup remains available in the compact
+  layout when **Keep wiki with minimap** is disabled.
+- Existing visibility settings still apply. Disabling the detached minimap restores
+  the usual compact layout. Edit mode hides the detached minimap and restores
+  the normal controls so their visibility can still be edited.
+
 > There is no compatibility with plugins that modify, overlay, or add indicators to the original `vanilla` minimap
 >>- Examples include `Quest Helper`, `Shortest Path`, `Ground Markers`, and `Player Indicators`.
 
@@ -114,7 +132,7 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
  - A: you can use either an anchor point (now movable) or you can set an `origin` for the minimap - dragging the minimap with `alt`, then `shift-click` when positioned where you want it will let you select where you want the minimap to be anchored to, relative to the `origin`.
 
 #### Q: Can you add [orb] to the detached minimap?
- - A: [#36](https://github.com/its-cue/compact-orbs/issues/36)
+ - A: XP, world map, wiki, activity log and store can be enabled individually in the **Detached Minimap** settings. These controls use client-side callbacks; server actions and Wiki Lookup are excluded. The earlier implementation was removed following the review linked in [#36](https://github.com/its-cue/compact-orbs/issues/36).
 
 ## Conflicts:
 The following plugins have been flagged to not work, or conflicts, with this plugin;

@@ -88,6 +88,11 @@ public class CompactOrbsConstants
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
+		public static final String KEEP_XP_WITH_MINIMAP = "keepXpWithMinimap";
+		public static final String KEEP_WORLD_MAP_WITH_MINIMAP = "keepWorldMapWithMinimap";
+		public static final String KEEP_WIKI_WITH_MINIMAP = "keepWikiWithMinimap";
+		public static final String KEEP_ACTIVITY_WITH_MINIMAP = "keepActivityWithMinimap";
+		public static final String KEEP_STORE_WITH_MINIMAP = "keepStoreWithMinimap";
 		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 
@@ -378,6 +383,10 @@ public class CompactOrbsConstants
 		{
 			public static final int CONTAINER_WIDTH = 182;
 			public static final int CONTAINER_HEIGHT = 166;
+			public static final int UTILITY_CONTAINER_HEIGHT = 213;
+			public static final int XP_Y = 45;
+			public static final int WIKI_Y = 158;
+			public static final int BOTTOM_UTILITY_Y = 174;
 			public static final int[] NO_CLICK_Y = {4, 44, 100, 125, 140, 155};
 			public static final int[] NO_CLICK_WIDTH = {178, 166, 161, 151, 141, 121};
 			public static final int[] NO_CLICK_HEIGHT = {40, 56, 25, 15, 15, 11};

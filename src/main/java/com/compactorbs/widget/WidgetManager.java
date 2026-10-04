@@ -120,6 +120,12 @@ public class WidgetManager
 			return;
 		}
 
+		if (!toDefault && manager.keepOrbWithMinimap(target))
+		{
+			// The detached copies need the full vanilla subtree (especially the wiki banner).
+			toDefault = true;
+		}
+
 		boolean remapped = false;
 		for (Map.Entry<ValueKey, SetValue> entry : getTarget(target).getValueMap().entrySet())
 		{

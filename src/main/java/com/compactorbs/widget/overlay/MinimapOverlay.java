@@ -81,7 +81,8 @@ public class MinimapOverlay extends Overlay
 			return null;
 		}
 
-		if (manager.isFixedMode()
+		if (manager.isEditingLayout
+			|| manager.isFixedMode()
 			|| !manager.isMinimapOverlayEnabled()
 			|| !manager.isMinimapHidden()
 			|| manager.isMinimapMinimized())
