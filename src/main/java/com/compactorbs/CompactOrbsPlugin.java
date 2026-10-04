@@ -529,11 +529,11 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
-			case ConfigKeys.KEEP_XP_WITH_MINIMAP:
-			case ConfigKeys.KEEP_WORLD_MAP_WITH_MINIMAP:
-			case ConfigKeys.KEEP_WIKI_WITH_MINIMAP:
-			case ConfigKeys.KEEP_ACTIVITY_WITH_MINIMAP:
-			case ConfigKeys.KEEP_STORE_WITH_MINIMAP:
+			case ConfigKeys.ENABLE_XP_OVERLAY:
+			case ConfigKeys.ENABLE_WORLD_MAP_OVERLAY:
+			case ConfigKeys.ENABLE_WIKI_OVERLAY:
+			case ConfigKeys.ENABLE_ACTIVITY_OVERLAY:
+			case ConfigKeys.ENABLE_STORE_OVERLAY:
 				clientThread.invokeLater(() ->
 				{
 					manager.rebuildLayout();

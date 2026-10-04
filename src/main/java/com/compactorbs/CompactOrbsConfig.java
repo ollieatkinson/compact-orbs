@@ -330,66 +330,66 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.KEEP_XP_WITH_MINIMAP,
+		keyName = ConfigKeys.ENABLE_XP_OVERLAY,
 		name = "Show XP",
 		description = "Show the XP control on the detached minimap and remove it from the compact orbs. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 3
 	)
-	default boolean keepXpWithMinimap()
+	default boolean showOverlayXp()
 	{
 		return false;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.KEEP_WORLD_MAP_WITH_MINIMAP,
+		keyName = ConfigKeys.ENABLE_WORLD_MAP_OVERLAY,
 		name = "Show World Map",
 		description = "Show the world map control on the detached minimap and remove it from the compact orbs. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 4
 	)
-	default boolean keepWorldMapWithMinimap()
+	default boolean showOverlayWorldMap()
 	{
 		return false;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.KEEP_WIKI_WITH_MINIMAP,
+		keyName = ConfigKeys.ENABLE_WIKI_OVERLAY,
 		name = "Show Wiki",
 		description = "Show Wiki Search and DPS on the detached minimap and remove Wiki from the compact orbs. Lookup is unavailable here. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 5
 	)
-	default boolean keepWikiWithMinimap()
+	default boolean showOverlayWiki()
 	{
 		return false;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.KEEP_ACTIVITY_WITH_MINIMAP,
+		keyName = ConfigKeys.ENABLE_ACTIVITY_OVERLAY,
 		name = "Show Activity Log",
 		description = "Show the activity log control on the detached minimap and remove it from the compact orbs. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 6
 	)
-	default boolean keepActivityWithMinimap()
+	default boolean showOverlayActivity()
 	{
 		return false;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.KEEP_STORE_WITH_MINIMAP,
+		keyName = ConfigKeys.ENABLE_STORE_OVERLAY,
 		name = "Show Store",
 		description = "Show the store control on the detached minimap and remove it from the compact orbs. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 7
 	)
-	default boolean keepStoreWithMinimap()
+	default boolean showOverlayStore()
 	{
 		return false;
 	}

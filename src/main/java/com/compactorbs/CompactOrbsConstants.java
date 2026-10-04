@@ -88,11 +88,11 @@ public class CompactOrbsConstants
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
-		public static final String KEEP_XP_WITH_MINIMAP = "keepXpWithMinimap";
-		public static final String KEEP_WORLD_MAP_WITH_MINIMAP = "keepWorldMapWithMinimap";
-		public static final String KEEP_WIKI_WITH_MINIMAP = "keepWikiWithMinimap";
-		public static final String KEEP_ACTIVITY_WITH_MINIMAP = "keepActivityWithMinimap";
-		public static final String KEEP_STORE_WITH_MINIMAP = "keepStoreWithMinimap";
+		public static final String ENABLE_XP_OVERLAY = "keepXpWithMinimap";
+		public static final String ENABLE_WORLD_MAP_OVERLAY = "keepWorldMapWithMinimap";
+		public static final String ENABLE_WIKI_OVERLAY = "keepWikiWithMinimap";
+		public static final String ENABLE_ACTIVITY_OVERLAY = "keepActivityWithMinimap";
+		public static final String ENABLE_STORE_OVERLAY = "keepStoreWithMinimap";
 		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 

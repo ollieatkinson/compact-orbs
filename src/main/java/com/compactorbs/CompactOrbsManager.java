@@ -971,8 +971,8 @@ public class CompactOrbsManager
 
 	public boolean hasUtilityOrbsWithMinimap()
 	{
-		return canAttachToMinimap() && (config.keepXpWithMinimap() || config.keepWorldMapWithMinimap()
-			|| config.keepWikiWithMinimap() || config.keepActivityWithMinimap() || config.keepStoreWithMinimap());
+		return canAttachToMinimap() && (config.showOverlayXp() || config.showOverlayWorldMap()
+			|| config.showOverlayWiki() || config.showOverlayActivity() || config.showOverlayStore());
 	}
 
 	public boolean keepOrbWithMinimap(TargetWidget target)
@@ -984,18 +984,18 @@ public class CompactOrbsManager
 		switch ((Orbs) target)
 		{
 			case XP_DROPS_CONTAINER:
-				return config.keepXpWithMinimap();
+				return config.showOverlayXp();
 			case WORLD_MAP_CONTAINER:
-				return config.keepWorldMapWithMinimap();
+				return config.showOverlayWorldMap();
 			case STORE_ORB_CONTAINER:
-				return config.keepStoreWithMinimap();
+				return config.showOverlayStore();
 			case ACTIVITY_ORB_CONTAINER:
-				return config.keepActivityWithMinimap();
+				return config.showOverlayActivity();
 			case WIKI_ICON_CONTAINER:
 			case WIKI_PLUGIN_ICON:
 			case WIKI_VANILLA_CONTAINER:
 			case WIKI_VANILLA_ICON:
-				return config.keepWikiWithMinimap();
+				return config.showOverlayWiki();
 			default:
 				return false;
 		}
