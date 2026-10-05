@@ -185,7 +185,9 @@ public class DetachedMinimapOrbs
 
 	public void clear()
 	{
-		for (Container container : containers.values())
+		List<Container> ancestors = new ArrayList<>(containers.values());
+		Collections.reverse(ancestors);
+		for (Container container : ancestors)
 		{
 			container.restore();
 		}
@@ -221,8 +223,6 @@ public class DetachedMinimapOrbs
 	{
 		private final Widget widget;
 		private final Rectangle bounds;
-		private final int x;
-		private final int y;
 		private final boolean noClickThrough;
 		private final Map<Widget, Rectangle> children = new LinkedHashMap<>();
 
@@ -230,8 +230,6 @@ public class DetachedMinimapOrbs
 		{
 			this.widget = widget;
 			bounds = layoutBounds(widget);
-			x = widget.getRelativeX();
-			y = widget.getRelativeY();
 			noClickThrough = widget.getNoClickThrough();
 			remember(widget.getStaticChildren());
 			remember(widget.getDynamicChildren());
@@ -273,7 +271,7 @@ public class DetachedMinimapOrbs
 
 		private void restore()
 		{
-			widget.setForcedPosition(x, y);
+			widget.setForcedPosition(-1, -1);
 			widget.revalidate();
 			widget.setWidth(bounds.width);
 			widget.setHeight(bounds.height);

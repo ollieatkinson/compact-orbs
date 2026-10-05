@@ -125,6 +125,7 @@ public class DetachedMinimapOrbsTest
 		assertEquals(originalContainer, container.getBounds());
 		assertEquals(originalContainer, host.getBounds());
 		assertEquals(originalWorld, world.getBounds());
+		verify(host).setForcedPosition(-1, -1);
 		verify(overlays).add(nativeOverlay);
 		verify(overlays).removeIf(any());
 	}
