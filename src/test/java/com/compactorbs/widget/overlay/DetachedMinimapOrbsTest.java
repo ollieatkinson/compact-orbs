@@ -63,32 +63,48 @@ public class DetachedMinimapOrbsTest
 			return predicate.test(nativeOverlay);
 		});
 		orbs = new DetachedMinimapOrbs(client, overlays);
+		settleNativeOverlay();
+	}
+
+	private void settleNativeOverlay()
+	{
+		orbs.update(manager, widgets);
+		orbs.update(manager, widgets);
 	}
 
 	private Widget widget(Widget parent, Rectangle bounds)
 	{
 		Widget widget = mock(Widget.class);
-		Rectangle original = new Rectangle(bounds);
+		Rectangle parentBounds = parent != null ? parent.getBounds() : new Rectangle();
+		Rectangle relative = new Rectangle(bounds.x - parentBounds.x, bounds.y - parentBounds.y,
+			bounds.width, bounds.height);
+		Rectangle original = new Rectangle(relative);
 		when(widget.getParent()).thenReturn(parent);
-		when(widget.getBounds()).thenAnswer(invocation -> new Rectangle(bounds));
-		when(widget.getWidth()).thenAnswer(invocation -> bounds.width);
-		when(widget.getHeight()).thenAnswer(invocation -> bounds.height);
-		when(widget.getRelativeX()).thenAnswer(invocation ->
-			bounds.x - (parent != null ? parent.getBounds().x : 0));
-		when(widget.getRelativeY()).thenAnswer(invocation ->
-			bounds.y - (parent != null ? parent.getBounds().y : 0));
+		when(widget.getBounds()).thenAnswer(invocation ->
+		{
+			Rectangle current = new Rectangle(relative);
+			if (parent != null)
+			{
+				Rectangle location = parent.getBounds();
+				current.translate(location.x, location.y);
+			}
+			return current;
+		});
+		when(widget.getWidth()).thenAnswer(invocation -> relative.width);
+		when(widget.getHeight()).thenAnswer(invocation -> relative.height);
+		when(widget.getRelativeX()).thenAnswer(invocation -> relative.x);
+		when(widget.getRelativeY()).thenAnswer(invocation -> relative.y);
 		doAnswer(invocation ->
 		{
 			int x = invocation.getArgument(0);
 			int y = invocation.getArgument(1);
-			Rectangle currentParent = parent != null ? parent.getBounds() : new Rectangle();
-			bounds.x = x < 0 ? original.x : currentParent.x + x;
-			bounds.y = y < 0 ? original.y : currentParent.y + y;
+			relative.x = x < 0 ? original.x : x;
+			relative.y = y < 0 ? original.y : y;
 			return null;
 		}).when(widget).setForcedPosition(anyInt(), anyInt());
-		doAnswer(invocation -> { bounds.width = invocation.getArgument(0); return null; })
+		doAnswer(invocation -> { relative.width = invocation.getArgument(0); return null; })
 			.when(widget).setWidth(anyInt());
-		doAnswer(invocation -> { bounds.height = invocation.getArgument(0); return null; })
+		doAnswer(invocation -> { relative.height = invocation.getArgument(0); return null; })
 			.when(widget).setHeight(anyInt());
 		return widget;
 	}
@@ -96,11 +112,18 @@ public class DetachedMinimapOrbsTest
 	@Test
 	public void originalWorldMovesAndCompactHpStaysInPlace()
 	{
+		orbs = new DetachedMinimapOrbs(client, overlays);
+		orbs.update(manager, widgets);
+		// The native overlay finishes realigning after its dimensions change.
+		host.setForcedPosition(483, 400);
+		orbs.update(manager, widgets);
 		Rectangle hpBounds = hp.getBounds();
+		verify(overlays, never()).removeIf(any());
+		verify(world, never()).setForcedPosition(anyInt(), anyInt());
 		orbs.update(manager, widgets);
 		assertEquals(new Rectangle(227, 175, 30, 30), world.getBounds());
 		assertEquals(hpBounds, hp.getBounds());
-		assertEquals(new Rectangle(50, 50, 650, 550), container.getBounds());
+		assertEquals(new Rectangle(50, 50, 633, 550), container.getBounds());
 		assertEquals(container.getBounds(), host.getBounds());
 		verify(world, never()).setOnOpListener(any(Object[].class));
 		verify(world, never()).setClickMask(anyInt());
@@ -161,6 +184,7 @@ public class DetachedMinimapOrbsTest
 		// Simulate the layout rebuild applying the saved custom position after restoring parents.
 		hp.setForcedPosition(10, 100);
 		when(manager.hasUtilityOrbsWithMinimap()).thenReturn(true);
+		settleNativeOverlay();
 		orbs.update(manager, widgets);
 		verify(hp, times(2)).setForcedPosition(460, 450);
 	}

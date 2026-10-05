@@ -39,6 +39,7 @@ public class DetachedMinimapOrbs
 	private final Map<Orbs, Widget> moved = new EnumMap<>(Orbs.class);
 	private final Map<Widget, Container> containers = new LinkedHashMap<>();
 	private Widget minimap;
+	private int layoutFrames = 2;
 
 	@Inject
 	public DetachedMinimapOrbs(Client client, OverlayManager overlayManager)
@@ -59,6 +60,14 @@ public class DetachedMinimapOrbs
 		{
 			clear();
 			minimap = current;
+		}
+
+		// Native overlays position from the previous frame's dimensions, then report their new size.
+		// Let the changed size render and realign before capturing or suspending their parents.
+		if (layoutFrames > 0)
+		{
+			layoutFrames--;
+			return;
 		}
 
 		// The native minimap overlay otherwise snaps these same parents beneath our overlay.
@@ -204,6 +213,7 @@ public class DetachedMinimapOrbs
 		containers.clear();
 		moved.clear();
 		minimap = null;
+		layoutFrames = 2;
 	}
 
 	// Canvas bounds are from the last draw; layout coordinates already reflect a toggle or remap.
