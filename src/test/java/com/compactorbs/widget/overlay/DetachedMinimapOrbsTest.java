@@ -73,9 +73,10 @@ public class DetachedMinimapOrbsTest
 		when(widget.getBounds()).thenAnswer(invocation -> new Rectangle(bounds));
 		when(widget.getWidth()).thenAnswer(invocation -> bounds.width);
 		when(widget.getHeight()).thenAnswer(invocation -> bounds.height);
-		Rectangle parentBounds = parent != null ? parent.getBounds() : new Rectangle();
-		when(widget.getRelativeX()).thenReturn(bounds.x - parentBounds.x);
-		when(widget.getRelativeY()).thenReturn(bounds.y - parentBounds.y);
+		when(widget.getRelativeX()).thenAnswer(invocation ->
+			bounds.x - (parent != null ? parent.getBounds().x : 0));
+		when(widget.getRelativeY()).thenAnswer(invocation ->
+			bounds.y - (parent != null ? parent.getBounds().y : 0));
 		doAnswer(invocation ->
 		{
 			int x = invocation.getArgument(0);
@@ -144,6 +145,23 @@ public class DetachedMinimapOrbsTest
 		when(indicator.isHidden()).thenReturn(true);
 		orbs.update(manager, widgets);
 		verify(wiki).setForcedPosition(174, 158);
+	}
+
+	@Test
+	public void togglingMinimapKeepsCompactPositionWhenCanvasBoundsAreStale()
+	{
+		// The layout has been remapped, but getBounds still describes the last rendered position.
+		hp.setForcedPosition(10, 100);
+		when(hp.getBounds()).thenReturn(new Rectangle(510, 450, 30, 30));
+		orbs.update(manager, widgets);
+		verify(hp).setForcedPosition(460, 450);
+		when(manager.hasUtilityOrbsWithMinimap()).thenReturn(false);
+		orbs.update(manager, widgets);
+		// Simulate the layout rebuild applying the saved custom position after restoring parents.
+		hp.setForcedPosition(10, 100);
+		when(manager.hasUtilityOrbsWithMinimap()).thenReturn(true);
+		orbs.update(manager, widgets);
+		verify(hp, times(2)).setForcedPosition(460, 450);
 	}
 
 }

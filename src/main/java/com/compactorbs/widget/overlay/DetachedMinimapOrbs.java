@@ -98,7 +98,7 @@ public class DetachedMinimapOrbs
 			for (Widget parent = source.getParent(); parent != null; parent = parent.getParent())
 			{
 				Container saved = containers.get(parent);
-				Rectangle bounds = saved != null ? saved.bounds : parent.getBounds();
+				Rectangle bounds = saved != null ? saved.bounds : layoutBounds(parent);
 				if (bounds.contains(detached))
 				{
 					break;
@@ -142,7 +142,7 @@ public class DetachedMinimapOrbs
 			}
 			Container expandedParent = containers.get(source.getParent());
 			Rectangle parent = expandedParent != null
-				? expandedParent.bounds.union(detached) : source.getParent().getBounds();
+				? expandedParent.bounds.union(detached) : layoutBounds(source.getParent());
 			if (target == Orbs.WIKI_ICON_CONTAINER && !source.isHidden())
 			{
 				Rectangle bounds = new Rectangle(detached.x + x, detached.y + y,
@@ -204,6 +204,19 @@ public class DetachedMinimapOrbs
 		minimap = null;
 	}
 
+	// Canvas bounds are from the last draw; layout coordinates already reflect a toggle or remap.
+	private static Rectangle layoutBounds(Widget widget)
+	{
+		Rectangle bounds = new Rectangle(widget.getRelativeX(), widget.getRelativeY(),
+			widget.getWidth(), widget.getHeight());
+		for (Widget parent = widget.getParent(); parent != null; parent = parent.getParent())
+		{
+			bounds.translate(parent.getRelativeX() - parent.getScrollX(),
+				parent.getRelativeY() - parent.getScrollY());
+		}
+		return bounds;
+	}
+
 	private static class Container
 	{
 		private final Widget widget;
@@ -216,7 +229,7 @@ public class DetachedMinimapOrbs
 		private Container(Widget widget)
 		{
 			this.widget = widget;
-			bounds = new Rectangle(widget.getBounds());
+			bounds = layoutBounds(widget);
 			x = widget.getRelativeX();
 			y = widget.getRelativeY();
 			noClickThrough = widget.getNoClickThrough();
@@ -233,7 +246,7 @@ public class DetachedMinimapOrbs
 				{
 					if (child != null)
 					{
-						children.put(child, new Rectangle(child.getBounds()));
+						children.put(child, layoutBounds(child));
 					}
 				}
 			}
@@ -245,7 +258,7 @@ public class DetachedMinimapOrbs
 			Widget parent = widget.getParent();
 			Container expandedParent = containers.get(parent);
 			Rectangle parentBounds = expandedParent != null ? expandedParent.bounds.union(detached)
-				: parent != null ? parent.getBounds() : new Rectangle();
+				: parent != null ? layoutBounds(parent) : new Rectangle();
 			widget.setForcedPosition(expanded.x - parentBounds.x, expanded.y - parentBounds.y);
 			widget.revalidate();
 			widget.setWidth(expanded.width);
