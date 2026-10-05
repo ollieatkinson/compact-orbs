@@ -9,6 +9,7 @@ import com.compactorbs.widget.elements.Orbs;
 import java.awt.Rectangle;
 import java.util.function.Predicate;
 import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -21,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,4 +127,23 @@ public class DetachedMinimapOrbsTest
 		verify(overlays).add(nativeOverlay);
 		verify(overlays).removeIf(any());
 	}
+	@Test
+	public void wikiAvoidsIndicatorUsingItsNewPosition()
+	{
+		Widget wiki = widget(container, new Rectangle(660, 440, 33, 15));
+		// Canvas bounds can still describe the previous frame after revalidation.
+		when(wiki.getBounds()).thenReturn(new Rectangle(660, 440, 33, 15));
+		when(widgets.getTargetWidget(Orbs.WIKI_ICON_CONTAINER)).thenReturn(wiki);
+		when(manager.keepOrbWithMinimap(Orbs.WIKI_ICON_CONTAINER)).thenReturn(true);
+		Widget indicator = widget(null, new Rectangle(225, 208, 25, 25));
+		when(client.getWidget(InterfaceID.ToplevelPreEoc.MULTIWAY_ICON)).thenReturn(indicator);
+		orbs.update(manager, widgets);
+		verify(wiki).setForcedPosition(138, 158);
+		orbs.update(manager, widgets);
+		verify(wiki, times(2)).setForcedPosition(138, 158);
+		when(indicator.isHidden()).thenReturn(true);
+		orbs.update(manager, widgets);
+		verify(wiki).setForcedPosition(174, 158);
+	}
+
 }

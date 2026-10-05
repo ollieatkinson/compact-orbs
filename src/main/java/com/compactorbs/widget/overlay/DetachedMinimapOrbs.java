@@ -143,12 +143,15 @@ public class DetachedMinimapOrbs
 			Container expandedParent = containers.get(source.getParent());
 			Rectangle parent = expandedParent != null
 				? expandedParent.bounds.union(detached) : source.getParent().getBounds();
+			if (target == Orbs.WIKI_ICON_CONTAINER && !source.isHidden())
+			{
+				Rectangle bounds = new Rectangle(detached.x + x, detached.y + y,
+					source.getWidth(), source.getHeight());
+				avoidMultiCombatIndicator(bounds, manager);
+				x = bounds.x - detached.x;
+			}
 			source.setForcedPosition(detached.x + x - parent.x, detached.y + y - parent.y);
 			source.revalidate();
-			if (target == Orbs.WIKI_ICON_CONTAINER)
-			{
-				avoidMultiCombatIndicator(source, parent, manager);
-			}
 		}
 	}
 
@@ -165,19 +168,17 @@ public class DetachedMinimapOrbs
 		return false;
 	}
 
-	private void avoidMultiCombatIndicator(Widget wiki, Rectangle parent, CompactOrbsManager manager)
+	private void avoidMultiCombatIndicator(Rectangle bounds, CompactOrbsManager manager)
 	{
 		Widget indicator = client.getWidget(manager.isClassicResizable()
 			? InterfaceID.ToplevelOsrsStretch.MULTIWAY_ICON
 			: InterfaceID.ToplevelPreEoc.MULTIWAY_ICON);
-		if (indicator != null && !indicator.isHidden() && !wiki.isHidden())
+		if (indicator != null && !indicator.isHidden())
 		{
-			Rectangle bounds = wiki.getBounds();
 			Rectangle occupied = indicator.getBounds();
 			if (bounds.intersects(occupied))
 			{
-				wiki.setForcedPosition(occupied.x - bounds.width - 4 - parent.x, bounds.y - parent.y);
-				wiki.revalidate();
+				bounds.x = occupied.x - bounds.width - 4;
 			}
 		}
 	}
