@@ -2,9 +2,7 @@
 
 package com.compactorbs.widget.overlay;
 
-import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants.Layout;
-import com.compactorbs.CompactOrbsConstants.Layout.Original;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.ValueKey;
@@ -12,22 +10,20 @@ import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetPositionMode;
-import net.runelite.client.callback.ClientThread;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayManager;
 
-/**
- * Displays utility widgets on the detached minimap while retaining the original
- * widgets as the source of state and client-side operation callbacks.
- */
+/** Positions native utility widgets beside the detached minimap. */
 @Singleton
 public class DetachedMinimapOrbs
 {
@@ -38,287 +34,240 @@ public class DetachedMinimapOrbs
 	};
 
 	private final Client client;
-	private final CompactOrbsConfig config;
-	private final CompactOrbsManager manager;
-	private final WidgetManager widgetManager;
-	private final ClientThread clientThread;
-	private final Map<Orbs, Mirror> mirrors = new EnumMap<>(Orbs.class);
-	private Widget parent;
+	private final OverlayManager overlayManager;
+	private final List<Overlay> suspendedOverlays = new ArrayList<>();
+	private final Map<Orbs, Widget> moved = new EnumMap<>(Orbs.class);
+	private final Map<Widget, Container> containers = new LinkedHashMap<>();
+	private Widget minimap;
 
 	@Inject
-	public DetachedMinimapOrbs(Client client, CompactOrbsConfig config,
-		CompactOrbsManager manager, WidgetManager widgetManager, ClientThread clientThread)
+	public DetachedMinimapOrbs(Client client, OverlayManager overlayManager)
 	{
 		this.client = client;
-		this.config = config;
-		this.manager = manager;
-		this.widgetManager = widgetManager;
-		this.clientThread = clientThread;
+		this.overlayManager = overlayManager;
 	}
 
-	public void update()
+	public void update(CompactOrbsManager manager, WidgetManager widgetManager)
 	{
-		Widget currentParent = client.getWidget(MinimapOverlay.UNIVERSE);
-		if (!manager.hasUtilityOrbsWithMinimap() || currentParent == null)
+		Widget current = client.getWidget(MinimapOverlay.UNIVERSE);
+		if (!manager.hasUtilityOrbsWithMinimap() || current == null || current.isHidden())
 		{
 			clear();
 			return;
 		}
-
-		if (currentParent != parent)
+		if (minimap != current || sourcesChanged(manager, widgetManager))
 		{
 			clear();
-			parent = currentParent;
+			minimap = current;
 		}
 
+		// The native minimap overlay otherwise snaps these same parents beneath our overlay.
+		if (suspendedOverlays.isEmpty())
+		{
+			overlayManager.removeIf(overlay ->
+			{
+				if ("RESIZABLE_MINIMAP_WIDGET".equals(overlay.getName())
+					|| "RESIZABLE_MINIMAP_STONES_WIDGET".equals(overlay.getName()))
+				{
+					suspendedOverlays.add(overlay);
+					return true;
+				}
+				return false;
+			});
+		}
+
+		Rectangle detached = minimap.getBounds();
 		for (Orbs target : TARGETS)
 		{
 			Widget source = widgetManager.getTargetWidget(target);
-			boolean selected = manager.keepOrbWithMinimap(target);
-			Mirror mirror = mirrors.get(target);
-			if (mirror != null && (mirror.source != source || !selected))
-			{
-				release(mirror);
-				mirrors.remove(target);
-				mirror = null;
-			}
-			if (!selected || source == null)
+			if (!manager.keepOrbWithMinimap(target) || source == null)
 			{
 				continue;
 			}
-			if (mirror == null)
+			if (!moved.containsKey(target))
 			{
-				// Apply vanilla sizes before copying; custom compact positions are irrelevant here.
 				widgetManager.remapTargets(target);
 				if (target == Orbs.WIKI_ICON_CONTAINER)
 				{
 					widgetManager.remapTargets(Orbs.WIKI_PLUGIN_ICON,
 						Orbs.WIKI_VANILLA_CONTAINER, Orbs.WIKI_VANILLA_ICON);
 				}
-				mirror = new Mirror(source, parent.createChild(-1, source.getType()));
-				mirrors.put(target, mirror);
+				moved.put(target, source);
 			}
+			// Snapshot the whole ancestor chain before changing any geometry.
+			for (Widget parent = source.getParent(); parent != null; parent = parent.getParent())
+			{
+				Container saved = containers.get(parent);
+				Rectangle bounds = saved != null ? saved.bounds : parent.getBounds();
+				if (bounds.contains(detached))
+				{
+					break;
+				}
+				containers.computeIfAbsent(parent, Container::new);
+			}
+		}
 
-			mirror.update(true);
-			position(target, mirror.copy);
-			mirror.copy.setHidden(source.isSelfHidden() || isHidden(target));
-			mirror.copy.revalidate();
+		List<Container> ancestors = new ArrayList<>(containers.values());
+		Collections.reverse(ancestors);
+		for (Container container : ancestors)
+		{
+			container.expand(detached, containers);
+		}
+		for (Map.Entry<Orbs, Widget> entry : moved.entrySet())
+		{
+			Orbs target = entry.getKey();
+			Widget source = entry.getValue();
+			boolean right = target == Orbs.WORLD_MAP_CONTAINER || target == Orbs.WIKI_ICON_CONTAINER;
+			int x = target.getValueMap().get(ValueKey.X).getOriginal();
+			if (right)
+			{
+				x = detached.width - source.getWidth() - x
+					- (Layout.Original.MAP_CONTAINER_WIDTH - Layout.Original.ORBS_CONTAINER_WIDTH);
+			}
+			int y;
+			switch (target)
+			{
+				case XP_DROPS_CONTAINER:
+					y = Layout.MinimapOverlay.XP_Y;
+					break;
+				case WIKI_ICON_CONTAINER:
+					y = Layout.MinimapOverlay.WIKI_Y;
+					break;
+				case STORE_ORB_CONTAINER:
+				case ACTIVITY_ORB_CONTAINER:
+					y = Layout.MinimapOverlay.BOTTOM_UTILITY_Y;
+					break;
+				default:
+					y = target.getValueMap().get(ValueKey.Y).getOriginal() + 10;
+			}
+			Container expandedParent = containers.get(source.getParent());
+			Rectangle parent = expandedParent != null
+				? expandedParent.bounds.union(detached) : source.getParent().getBounds();
+			source.setForcedPosition(detached.x + x - parent.x, detached.y + y - parent.y);
+			source.revalidate();
 			if (target == Orbs.WIKI_ICON_CONTAINER)
 			{
-				avoidMultiCombatIndicator(mirror.copy);
+				avoidMultiCombatIndicator(source, parent, manager);
 			}
-
-			// Negative forced coordinates restore native positioning. Clip the source
-			// at the right edge instead, retaining one pixel for the world-map hotkey.
-			Widget sourceParent = source.getParent();
-			int edge = sourceParent != null ? sourceParent.getWidth() : client.getCanvasWidth();
-			source.setForcedPosition(edge -
-				(target == Orbs.WORLD_MAP_CONTAINER ? 1 : 0), source.getOriginalY());
-			source.revalidate();
 		}
 	}
 
-	private void avoidMultiCombatIndicator(Widget wiki)
+	private boolean sourcesChanged(CompactOrbsManager manager, WidgetManager widgetManager)
+	{
+		for (Map.Entry<Orbs, Widget> entry : moved.entrySet())
+		{
+			if (!manager.keepOrbWithMinimap(entry.getKey())
+				|| widgetManager.getTargetWidget(entry.getKey()) != entry.getValue())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void avoidMultiCombatIndicator(Widget wiki, Rectangle parent, CompactOrbsManager manager)
 	{
 		Widget indicator = client.getWidget(manager.isClassicResizable()
 			? InterfaceID.ToplevelPreEoc.MULTIWAY_ICON
 			: InterfaceID.ToplevelOsrsStretch.MULTIWAY_ICON);
-		if (indicator == null || indicator.isHidden() || wiki.isHidden())
+		if (indicator != null && !indicator.isHidden() && !wiki.isHidden())
 		{
-			return;
-		}
-		Rectangle bounds = wiki.getBounds();
-		Rectangle indicatorBounds = indicator.getBounds();
-		if (bounds.intersects(indicatorBounds))
-		{
-			// Wiki is right-aligned. Leave a gap beside the native status indicator
-			// without changing its position, visibility or combat state.
-			wiki.setOriginalX(wiki.getOriginalX() + bounds.x + bounds.width - indicatorBounds.x + 4);
-			wiki.revalidate();
-		}
-	}
-
-	private boolean isHidden(Orbs target)
-	{
-		switch (target)
-		{
-			case XP_DROPS_CONTAINER:
-				return config.hideXp();
-			case WORLD_MAP_CONTAINER:
-				return config.hideWorld();
-			case WIKI_ICON_CONTAINER:
-				return config.hideWiki();
-			case ACTIVITY_ORB_CONTAINER:
-				return config.hideActivity() || manager.isActivityOrbDisabled();
-			case STORE_ORB_CONTAINER:
-				return config.hideStore() || manager.isStoreOrbDisabled();
-			default:
-				return false;
-		}
-	}
-
-	private void position(Orbs target, Widget copy)
-	{
-		// The vanilla orbs container is four pixels narrower and ten pixels below the map.
-		boolean rightAligned = target == Orbs.WORLD_MAP_CONTAINER || target == Orbs.WIKI_ICON_CONTAINER;
-		copy.setXPositionMode(rightAligned
-			? WidgetPositionMode.ABSOLUTE_RIGHT
-			: WidgetPositionMode.ABSOLUTE_LEFT);
-		copy.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		copy.setOriginalX(target.getValueMap().get(ValueKey.X).getOriginal()
-			+ (rightAligned
-				? Original.MAP_CONTAINER_WIDTH - Original.ORBS_CONTAINER_WIDTH : 0));
-		switch (target)
-		{
-			case XP_DROPS_CONTAINER:
-				copy.setOriginalY(Layout.MinimapOverlay.XP_Y);
-				break;
-			case WIKI_ICON_CONTAINER:
-				copy.setOriginalY(Layout.MinimapOverlay.WIKI_Y);
-				break;
-			case STORE_ORB_CONTAINER:
-			case ACTIVITY_ORB_CONTAINER:
-				copy.setOriginalY(Layout.MinimapOverlay.BOTTOM_UTILITY_Y);
-				break;
-			default:
-				copy.setOriginalY(target.getValueMap().get(ValueKey.Y).getOriginal() + 10);
+			Rectangle bounds = wiki.getBounds();
+			Rectangle occupied = indicator.getBounds();
+			if (bounds.intersects(occupied))
+			{
+				wiki.setForcedPosition(occupied.x - bounds.width - 4 - parent.x, bounds.y - parent.y);
+				wiki.revalidate();
+			}
 		}
 	}
 
 	public void clear()
 	{
-		for (Mirror mirror : mirrors.values())
+		for (Container container : containers.values())
 		{
-			release(mirror);
+			container.restore();
 		}
-		mirrors.clear();
-		parent = null;
+		for (Widget source : moved.values())
+		{
+			source.setForcedPosition(-1, -1);
+			source.revalidate();
+		}
+		for (Overlay overlay : suspendedOverlays)
+		{
+			overlayManager.add(overlay);
+		}
+		suspendedOverlays.clear();
+		containers.clear();
+		moved.clear();
+		minimap = null;
 	}
 
-	private void release(Mirror mirror)
+	private static class Container
 	{
-		mirror.source.setForcedPosition(-1, -1);
-		mirror.source.revalidate();
-		widgetManager.clearChild(mirror.copy);
-	}
+		private final Widget widget;
+		private final Rectangle bounds;
+		private final int x;
+		private final int y;
+		private final boolean noClickThrough;
+		private final Map<Widget, Rectangle> children = new LinkedHashMap<>();
 
-	private class Mirror
-	{
-		private final Widget source;
-		private final Widget copy;
-		private final List<Mirror> children = new ArrayList<>();
-
-		private Mirror(Widget source, Widget copy)
+		private Container(Widget widget)
 		{
-			this.source = source;
-			this.copy = copy;
-			// Listener-backed actions remain available with a zero click mask. Disable
-			// native operation packets, dragging and target selection on the copy.
-			copy.setClickMask(0);
-			copy.setTargetVerb(null);
-			copy.setOnOpListener((JavaScriptCallback) event ->
-			{
-				Object[] listener = source.getOnOpListener();
-				String[] actions = source.getActions();
-				int op = event.getOp();
-				if (listener == null || listener.length == 0 || actions == null
-					|| op <= 0 || op > actions.length || actions[op - 1] == null)
-				{
-					return;
-				}
-				// A user click runs the existing client-side callback, never a menu action.
-				// Queue it because the script interpreter is not reentrant.
-				Object[] arguments = listener.clone();
-				clientThread.invokeLater(() -> client.createScriptEventBuilder(arguments)
-					.setSource(source)
-					.setOp(op)
-					.build()
-					.setCanSendPackets(false)
-					.run());
-			});
-			copy.setHasListener(true);
+			this.widget = widget;
+			bounds = new Rectangle(widget.getBounds());
+			x = widget.getRelativeX();
+			y = widget.getRelativeY();
+			noClickThrough = widget.getNoClickThrough();
+			remember(widget.getStaticChildren());
+			remember(widget.getDynamicChildren());
+			remember(widget.getNestedChildren());
 		}
 
-		private void update(boolean root)
+		private void remember(Widget[] widgets)
 		{
-			copy.setType(source.getType());
-			copy.setOriginalWidth(source.getOriginalWidth());
-			copy.setOriginalHeight(source.getOriginalHeight());
-			copy.setWidthMode(source.getWidthMode());
-			copy.setHeightMode(source.getHeightMode());
-			if (!root)
+			if (widgets != null)
 			{
-				copy.setOriginalX(source.getOriginalX());
-				copy.setOriginalY(source.getOriginalY());
-				copy.setXPositionMode(source.getXPositionMode());
-				copy.setYPositionMode(source.getYPositionMode());
-			}
-			copy.setSpriteId(source.getSpriteId());
-			copy.setSpriteTiling(source.getSpriteTiling());
-			copy.setBorderType(source.getBorderType());
-			copy.setFlippedHorizontally(source.isFlippedHorizontally());
-			copy.setFlippedVertically(source.isFlippedVertically());
-			copy.setOpacity(source.getOpacity());
-			copy.setText(source.getText());
-			copy.setTextColor(source.getTextColor());
-			copy.setTextShadowed(source.getTextShadowed());
-			copy.setFontId(source.getFontId());
-			copy.setLineHeight(source.getLineHeight());
-			copy.setXTextAlignment(source.getXTextAlignment());
-			copy.setYTextAlignment(source.getYTextAlignment());
-			copy.setFilled(source.isFilled());
-			copy.setName(source.getName());
-
-			copy.setNoClickThrough(source.getNoClickThrough());
-			copy.setHidden(source.isSelfHidden());
-			copy.clearActions();
-			String[] actions = source.getActions();
-			if (actions != null)
-			{
-				for (int i = 0; i < actions.length; i++)
+				for (Widget child : widgets)
 				{
-					if (actions[i] != null)
+					if (child != null)
 					{
-						copy.setAction(i, actions[i]);
+						children.put(child, new Rectangle(child.getBounds()));
 					}
 				}
 			}
-			copy.revalidate();
+		}
 
-			List<Widget> sources = new ArrayList<>();
-			addChildren(sources, source.getStaticChildren());
-			addChildren(sources, source.getDynamicChildren());
-			boolean changed = sources.size() != children.size();
-			for (int i = 0; !changed && i < sources.size(); i++)
+		private void expand(Rectangle detached, Map<Widget, Container> containers)
+		{
+			Rectangle expanded = bounds.union(detached);
+			Widget parent = widget.getParent();
+			Container expandedParent = containers.get(parent);
+			Rectangle parentBounds = expandedParent != null ? expandedParent.bounds.union(detached)
+				: parent != null ? parent.getBounds() : new Rectangle();
+			widget.setForcedPosition(expanded.x - parentBounds.x, expanded.y - parentBounds.y);
+			widget.revalidate();
+			widget.setWidth(expanded.width);
+			widget.setHeight(expanded.height);
+			widget.setNoClickThrough(false);
+			for (Map.Entry<Widget, Rectangle> entry : children.entrySet())
 			{
-				changed = sources.get(i) != children.get(i).source;
-			}
-			if (changed)
-			{
-				copy.deleteAllChildren();
-				children.clear();
-				for (Widget child : sources)
-				{
-					children.add(new Mirror(child, copy.createChild(-1, child.getType())));
-				}
-			}
-			for (Mirror child : children)
-			{
-				child.update(false);
+				Rectangle original = entry.getValue();
+				entry.getKey().setForcedPosition(original.x - expanded.x, original.y - expanded.y);
 			}
 		}
-	}
 
-	private static void addChildren(List<Widget> result, Widget[] widgets)
-	{
-		if (widgets != null)
+		private void restore()
 		{
-			for (Widget widget : widgets)
+			widget.setForcedPosition(x, y);
+			widget.revalidate();
+			widget.setWidth(bounds.width);
+			widget.setHeight(bounds.height);
+			widget.setNoClickThrough(noClickThrough);
+			for (Widget child : children.keySet())
 			{
-				if (widget != null)
-				{
-					result.add(widget);
-				}
+				child.setForcedPosition(-1, -1);
+				child.revalidate();
 			}
 		}
 	}

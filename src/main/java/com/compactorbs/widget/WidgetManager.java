@@ -122,7 +122,7 @@ public class WidgetManager
 
 		if (!toDefault && manager.keepOrbWithMinimap(target))
 		{
-			// The detached copies need the full vanilla subtree (especially the wiki banner).
+			// Selected controls retain their native geometry beside the detached minimap.
 			toDefault = true;
 		}
 

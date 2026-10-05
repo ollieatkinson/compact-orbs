@@ -1009,7 +1009,9 @@ public class CompactOrbsManager
 			return;
 		}
 
-		boolean hidden = hideLogoutX && !isOverlayLogoutVisible() || hideStonesAndIcons();
+		boolean hidden = hideLogoutX && !isOverlayLogoutVisible()
+			|| !isEditingLayout && isOverlayLogoutVisible() && isMinimapHidden()
+			|| hideStonesAndIcons();
 
 		widgetManager.setTargetsHidden(hidden, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
 	}

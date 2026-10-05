@@ -191,7 +191,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	public void onBeforeRender(BeforeRender event)
 	{
-		detachedMinimapOrbs.update();
+		detachedMinimapOrbs.update(manager, widgetManager);
+		manager.hideLogout();
 	}
 
 	@Subscribe

@@ -358,7 +358,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_WIKI_OVERLAY,
 		name = "Show Wiki",
-		description = "Show Wiki Search and DPS on the detached minimap and remove Wiki from the compact orbs. Lookup is unavailable here. " +
+		description = "Show the Wiki control on the detached minimap and remove it from the compact orbs. " +
 			"Requires Show while in compact view.",
 		section = minimapOverlay,
 		position = 5
