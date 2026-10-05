@@ -538,7 +538,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				clientThread.invokeLater(() ->
 				{
 					manager.rebuildLayout();
-					widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, manager.hideMinimapOverlay());
 					manager.hideLogout();
 					manager.updateLogoutXPosition();
 					manager.updateLogoutXOverlay();

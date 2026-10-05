@@ -954,7 +954,7 @@ public class CompactOrbsManager
 		return config.hideMinimapToggle();
 	}
 
-	boolean hideMinimapOverlay()
+	public boolean hideMinimapOverlay()
 	{
 		return isEditingLayout || !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
 	}

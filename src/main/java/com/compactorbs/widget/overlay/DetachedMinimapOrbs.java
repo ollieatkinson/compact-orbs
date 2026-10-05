@@ -138,7 +138,7 @@ public class DetachedMinimapOrbs
 					y = Layout.MinimapOverlay.BOTTOM_UTILITY_Y;
 					break;
 				default:
-					y = target.getValueMap().get(ValueKey.Y).getOriginal() + 10;
+					y = target.getValueMap().get(ValueKey.Y).getOriginal() + Layout.ORBS_CONTAINER_OFFSET_Y;
 			}
 			Container expandedParent = containers.get(source.getParent());
 			Rectangle parent = expandedParent != null
@@ -168,8 +168,8 @@ public class DetachedMinimapOrbs
 	private void avoidMultiCombatIndicator(Widget wiki, Rectangle parent, CompactOrbsManager manager)
 	{
 		Widget indicator = client.getWidget(manager.isClassicResizable()
-			? InterfaceID.ToplevelPreEoc.MULTIWAY_ICON
-			: InterfaceID.ToplevelOsrsStretch.MULTIWAY_ICON);
+			? InterfaceID.ToplevelOsrsStretch.MULTIWAY_ICON
+			: InterfaceID.ToplevelPreEoc.MULTIWAY_ICON);
 		if (indicator != null && !indicator.isHidden() && !wiki.isHidden())
 		{
 			Rectangle bounds = wiki.getBounds();

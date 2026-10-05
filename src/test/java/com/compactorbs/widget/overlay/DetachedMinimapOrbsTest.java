@@ -7,7 +7,6 @@ import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
 import java.awt.Rectangle;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
@@ -56,18 +55,11 @@ public class DetachedMinimapOrbsTest
 		when(manager.hasUtilityOrbsWithMinimap()).thenReturn(true);
 		when(manager.keepOrbWithMinimap(Orbs.WORLD_MAP_CONTAINER)).thenReturn(true);
 		when(nativeOverlay.getName()).thenReturn("RESIZABLE_MINIMAP_WIDGET");
-		AtomicBoolean suspended = new AtomicBoolean();
 		when(overlays.removeIf(any())).thenAnswer(invocation ->
 		{
 			Predicate<Overlay> predicate = invocation.getArgument(0);
-			if (!suspended.get() && predicate.test(nativeOverlay))
-			{
-				suspended.set(true);
-				return true;
-			}
-			return false;
+			return predicate.test(nativeOverlay);
 		});
-		when(overlays.add(nativeOverlay)).thenAnswer(invocation -> suspended.getAndSet(false));
 		orbs = new DetachedMinimapOrbs(client, overlays);
 	}
 
